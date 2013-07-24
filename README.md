@@ -90,6 +90,7 @@ For those situations, there is a class called `EventBus`. It has the same method
     {
         public SubUserControl()
         {
+            // Since we're in a test, trigger OnLoad manually
             this.OnLoad(EventArgs.Empty);
         }
 
