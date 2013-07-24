@@ -7,7 +7,7 @@ Inspired by https://github.com/shiftkey/Reactive.EventAggregator
 
 ### Installation
 
-To install it, just run this from the Package Manager Console:
+To install it, just run this from the Package Manager Console or [download from NuGet manually](https://www.nuget.org/packages/Reactive.EventAggregator):
 
     Install-Package Reactive.EventAggregator.Net35
 
