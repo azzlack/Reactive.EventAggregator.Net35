@@ -19,43 +19,52 @@ To install it, just run this from the Package Manager Console:
 
 #### Subscribing to an event
 
-    // arrange
-    var eventWasRaised = false;
-    var eventPublisher = new EventAggregator();
+    private class TestEvent
+    {
+        public int Status { get; set; }
+    }
 
-    eventPublisher.GetEvent<SampleEvent>().Subscribe(se => eventWasRaised = true);
+    public void Subscribe_WhenGivenEvent_ShouldRaiseEvent()
+    {
+        var eventWasRaised = false;
+        var eventBus = new EventAggregator();
 
-    eventPublisher.Publish(new SampleEvent());
-    
-    eventWasRaised.ShouldBe(true);
+        eventBus.GetEvent<TestEvent>().Subscribe(new Observer<TestEvent>(x => eventWasRaised = true));
 
-#### Disposing of the event
+        eventBus.Publish(new TestEvent());
 
-  // arrange
-    var eventWasRaised = false;
-    var eventPublisher = new EventAggregator();
+        Assert.IsTrue(eventWasRaised);
+    }
 
-    // act
-    var subscription = eventPublisher.GetEvent<SampleEvent>().Subscribe(se => eventWasRaised = true);
+#### Unsubscribing to an event
 
-    subscription.Dispose();
-    eventPublisher.Publish(new SampleEvent());
+    private class TestEvent
+    {
+        public int Status { get; set; }
+    }
 
-    // assert
-    eventWasRaised.ShouldBe(false);
+    public void Unsubscribe_WhenGivenEvent_ShouldNotRaiseEvent()
+    {
+        var eventWasRaised = false;
+        var eventBus = new EventAggregator();
 
-#### Selectively subscribing to an event
+        var subscription = eventBus.GetEvent<TestEvent>().Subscribe(new Observer<TestEvent>(x => eventWasRaised = true));
 
-    // arrange
-    var eventWasRaised = false;
-    var eventPublisher = new EventAggregator();
+        subscription.Dispose();
+        eventBus.Publish(new TestEvent());
 
-    // act
-    eventPublisher.GetEvent<SampleEvent>()
-                  .Where(se => se.Status == 1)
-                  .Subscribe(se => eventWasRaised = true);
+        Assert.IsFalse(eventWasRaised);
+    }
 
-    eventPublisher.Publish(new SampleEvent { Status = 1 });
+### Using the EventBus singleton
+Normally, I'd recommend using a DI container to set up `EventAggregator` as a singleton instance for `IEventAggregator`, but there are some situations where this is not possible.  
+For those situations, there is a class called `EventBus`. It has the same methods as `EventAggregator` and can be used similarily:
 
-    // assert
-    eventWasRaised.ShouldBe(true);
+    public class MainForm : Form 
+    {
+        private
+        public MainForm()
+        {
+            
+        }
+    }
