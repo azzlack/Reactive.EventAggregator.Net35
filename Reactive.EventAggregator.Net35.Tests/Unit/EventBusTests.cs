@@ -7,8 +7,6 @@
 
     using NUnit.Framework;
 
-    using Reactive.EventAggreator.Net35;
-
     [TestFixture]
     public class EventBusTests
     {
@@ -36,14 +34,14 @@
             }
         }
 
-        public class SubUserControl : Control
+        public class SubUserControl : UserControl
         {
             public SubUserControl()
             {
                 this.OnLoad(EventArgs.Empty);
             }
 
-            public void OnLoad(EventArgs eventArgs)
+            protected override void OnLoad(EventArgs e)
             {
                 EventBus.Instance.Publish(new ControlLoaded(this));
             }

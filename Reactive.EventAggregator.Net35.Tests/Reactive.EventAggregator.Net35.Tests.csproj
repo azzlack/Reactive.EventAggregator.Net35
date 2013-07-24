@@ -56,9 +56,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Reactive.EventAggregator.Net35\Reactive.EventAggreator.Net35.csproj">
+    <ProjectReference Include="..\Reactive.EventAggregator.Net35\Reactive.EventAggregator.Net35.csproj">
       <Project>{44fb1368-db8b-4de6-b204-735fa11bcaae}</Project>
-      <Name>Reactive.EventAggreator.Net35</Name>
+      <Name>Reactive.EventAggregator.Net35</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

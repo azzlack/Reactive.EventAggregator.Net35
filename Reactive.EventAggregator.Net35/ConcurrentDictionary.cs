@@ -1,4 +1,4 @@
-﻿namespace Reactive.EventAggreator.Net35
+﻿namespace Reactive.EventAggregator.Net35
 {
     using System;
     using System.Collections;
@@ -38,7 +38,7 @@
         {
             get
             {
-                return d.Count;
+                return this.d.Count;
             }
         }
 
@@ -95,7 +95,7 @@
         {
             get
             {
-                return d.Keys;
+                return this.d.Keys;
             }
         }
 
@@ -109,7 +109,7 @@
         {
             get
             {
-                return d.Values;
+                return this.d.Values;
             }
         }
 
@@ -121,9 +121,9 @@
         ///                 </exception>
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            lock (syncRoot)
+            lock (this.syncRoot)
             {
-                d.Add(item.Key, item.Value);
+                this.d.Add(item.Key, item.Value);
             }
         }
 
@@ -132,9 +132,9 @@
         /// </summary>
         public void Clear()
         {
-            lock (syncRoot)
+            lock (this.syncRoot)
             {
-                d.Clear();
+                this.d.Clear();
             }
         }
 
@@ -148,7 +148,7 @@
         ///                 </param>
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return d.ContainsKey(item.Key) && d.ContainsValue(item.Value);
+            return this.d.ContainsKey(item.Key) && this.d.ContainsValue(item.Value);
         }
 
         /// <summary>
@@ -168,7 +168,7 @@
         ///                 </exception>
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            foreach (var k in d)
+            foreach (var k in this.d)
             {
                 array.SetValue(k, arrayIndex);
 
@@ -210,9 +210,9 @@
         ///                 </exception>
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            lock (syncRoot)
+            lock (this.syncRoot)
             {
-                return d.Remove(item.Key);
+                return this.d.Remove(item.Key);
             }
         }
 
@@ -225,7 +225,7 @@
         /// </returns>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return d.GetEnumerator();
+            return this.d.GetEnumerator();
         }
 
         /// <summary>
@@ -251,7 +251,7 @@
         ///                 </exception>
         public bool ContainsKey(TKey key)
         {
-            return d.ContainsKey(key);
+            return this.d.ContainsKey(key);
         }
 
         /// <summary>
@@ -265,9 +265,9 @@
         ///                 </exception>
         public void Add(TKey key, TValue value)
         {
-            lock (syncRoot)
+            lock (this.syncRoot)
             {
-                d.Add(key, value);
+                this.d.Add(key, value);
             }
         }
 
@@ -283,9 +283,9 @@
         ///                 </exception>
         public bool Remove(TKey key)
         {
-            lock (syncRoot)
+            lock (this.syncRoot)
             {
-                return d.Remove(key);
+                return this.d.Remove(key);
             }
         }
 
@@ -301,7 +301,7 @@
         ///                 </exception>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            return d.TryGetValue(key, out value);
+            return this.d.TryGetValue(key, out value);
         }
 
         /// <summary>
@@ -319,13 +319,13 @@
         {
             get
             {
-                return d[key];
+                return this.d[key];
             }
             set
             {
-                lock (syncRoot)
+                lock (this.syncRoot)
                 {
-                    d[key] = value;
+                    this.d[key] = value;
                 }
             }
         }

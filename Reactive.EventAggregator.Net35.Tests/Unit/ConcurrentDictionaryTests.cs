@@ -2,7 +2,7 @@
 {
     using NUnit.Framework;
 
-    using Reactive.EventAggreator.Net35;
+    using Reactive.EventAggregator.Net35;
 
     [TestFixture]
     public class ConcurrentDictionaryTests

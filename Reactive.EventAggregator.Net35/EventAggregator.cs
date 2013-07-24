@@ -1,4 +1,4 @@
-﻿namespace Reactive.EventAggreator.Net35
+﻿namespace Reactive.EventAggregator.Net35
 {
     using System;
     using System.Reactive.Linq;
@@ -21,7 +21,7 @@
         /// <returns>An observable.</returns>
         public IObservable<TEvent> GetEvent<TEvent>()
         {
-            var subject = (ISubject<TEvent>)subjects.GetOrAdd(typeof(TEvent), t => new Subject<TEvent>());
+            var subject = (ISubject<TEvent>)this.subjects.GetOrAdd(typeof(TEvent), t => new Subject<TEvent>());
 
             return subject.AsObservable();
         }
@@ -35,7 +35,7 @@
         {
             object subject;
 
-            if (subjects.TryGetValue(typeof(TEvent), out subject))
+            if (this.subjects.TryGetValue(typeof(TEvent), out subject))
             {
                 ((ISubject<TEvent>)subject).OnNext(e);
             }

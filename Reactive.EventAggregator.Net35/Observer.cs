@@ -1,4 +1,4 @@
-﻿namespace Reactive.EventAggreator.Net35
+﻿namespace Reactive.EventAggregator.Net35
 {
     using System;
 
