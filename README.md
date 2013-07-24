@@ -1,13 +1,9 @@
 Reactive.EventAggregator.Net35
 =============================
 
-Event Aggregator using Reactive Extensions 1.0, comptible with .NET 3.5 applications.
+Event Aggregator using Reactive Extensions 1.0, compatible with .NET 3.5 applications.
 
 Inspired by https://github.com/shiftkey/Reactive.EventAggregator
-
-## Reactive.EventAggreator
-
-This is an update of a blog post from José F. Romaniello about using Reactive Extensions to implement an event aggregator. [source](http://joseoncode.com/2010/04/29/event-aggregator-with-reactive-extensions/)
 
 ### Installation
 
