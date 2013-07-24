@@ -1,5 +1,6 @@
 Param (
-    [string]$Url
+	[string]$Url,
+	[string]$Base64EncodedMessage
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,63 +49,63 @@ function Write-Log {
 	Begin {}
 
 	Process {
-        
-        $ErrorActionPreference = "Continue"
+		
+		$ErrorActionPreference = "Continue"
 
-        if ($Messages.Length -gt 0) {
-		    try {			
-                foreach($m in $Messages) {			
-                    if ($NoConsoleOut -eq $false) {
-				        switch ($Level) {
-					        'Error' { 
-                                Write-Error $m -ErrorAction SilentlyContinue
-                                Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor Red
-                            }
-					        'Warn' { 
-                                Write-Warning $m 
-                            }
-					        'Info' { 
-                                Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor $ForegroundColor
-                            }
-				        }
-			        }
+		if ($Messages.Length -gt 0) {
+			try {			
+				foreach($m in $Messages) {			
+					if ($NoConsoleOut -eq $false) {
+						switch ($Level) {
+							'Error' { 
+								Write-Error $m -ErrorAction SilentlyContinue
+								Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor Red
+							}
+							'Warn' { 
+								Write-Warning $m 
+							}
+							'Info' { 
+								Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor $ForegroundColor
+							}
+						}
+					}
 
-                    if ($m.Trim().Length -gt 0) {
-			            $msg = '{0}{1} [{2}] : {3}' -f (" " * $Indent), (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level.ToUpper(), $m
-    
-			            if ($Clobber) {
-				            $msg | Out-File -FilePath $Path -Force
-			            } else {
-				            $msg | Out-File -FilePath $Path -Append
-			            }
-                    }
+					if ($m.Trim().Length -gt 0) {
+						$msg = '{0}{1} [{2}] : {3}' -f (" " * $Indent), (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level.ToUpper(), $m
+	
+						if ($Clobber) {
+							$msg | Out-File -FilePath $Path -Force
+						} else {
+							$msg | Out-File -FilePath $Path -Append
+						}
+					}
 			
-			        if ($EventLogName) {
+					if ($EventLogName) {
 			
-				        if (-not $EventSource) {
-					        $EventSource = ([IO.FileInfo] $MyInvocation.ScriptName).Name
-				        }
+						if (-not $EventSource) {
+							$EventSource = ([IO.FileInfo] $MyInvocation.ScriptName).Name
+						}
 			
-				        if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) { 
-					        [Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName) 
-		                } 
+						if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) { 
+							[Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName) 
+						} 
 
-				        $log = New-Object System.Diagnostics.EventLog  
-			            $log.set_log($EventLogName)  
-			            $log.set_source($EventSource) 
+						$log = New-Object System.Diagnostics.EventLog  
+						$log.set_log($EventLogName)  
+						$log.set_source($EventSource) 
 				
-				        switch ($Level) {
-					        "Error" { $log.WriteEntry($Message, 'Error', $EventID) }
-					        "Warn"  { $log.WriteEntry($Message, 'Warning', $EventID) }
-					        "Info"  { $log.WriteEntry($Message, 'Information', $EventID) }
-				        }
-			        }
-                }
-		    } 
-            catch {
-			    throw "Failed to create log entry in: '$Path'. The error was: '$_'."
-		    }
-        }
+						switch ($Level) {
+							"Error" { $log.WriteEntry($Message, 'Error', $EventID) }
+							"Warn"  { $log.WriteEntry($Message, 'Warning', $EventID) }
+							"Info"  { $log.WriteEntry($Message, 'Information', $EventID) }
+						}
+					}
+				}
+			} 
+			catch {
+				throw "Failed to create log entry in: '$Path'. The error was: '$_'."
+			}
+		}
 	}
 
 	End {}
@@ -165,37 +166,43 @@ function Write-Log {
 }
 
 $choices = [System.Management.Automation.Host.ChoiceDescription[]](
-    (New-Object System.Management.Automation.Host.ChoiceDescription "&Add API Key","Add an API Key for this URL"),
-    (New-Object System.Management.Automation.Host.ChoiceDescription "&Skip","Skip pushing to this URL"))
+	(New-Object System.Management.Automation.Host.ChoiceDescription "&Add API Key","Add an API Key for this URL"),
+	(New-Object System.Management.Automation.Host.ChoiceDescription "&Skip","Skip pushing to this URL"))
 
-    Write-Log "Invalid API key for this repository URL, or there is a version conflict" Warn -NoConsoleOut
-    $firstAnswer = $Host.UI.PromptForChoice('Access Denied',"Invalid API key for this repository URL, or there is a version conflict",$choices,(1))
+	Write-Output ""
+	Write-Log "Invalid API key for this repository URL, or there is a version conflict" Warn
 
-    if ($firstAnswer -eq 0) {
+	If ($Base64EncodedMessage) {
+		Write-Warning ([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64EncodedMessage)))
+	}
 
-        $fields = new-object "System.Collections.ObjectModel.Collection``1[[System.Management.Automation.Host.FieldDescription]]"
+	$firstAnswer = $Host.UI.PromptForChoice(("Would you like to try adding an API key for " + $Url + "?"), "", $choices, (1))
 
-        $f = New-Object System.Management.Automation.Host.FieldDescription "API Key for $Url"
-        $f.SetParameterType( [System.Security.SecureString] )
-        $f.HelpMessage  = "Please enter API Key for $Url"
-        $f.Label = "&API Key for $Url"
+	if ($firstAnswer -eq 0) {
+		$fields = new-object "System.Collections.ObjectModel.Collection``1[[System.Management.Automation.Host.FieldDescription]]"
 
-        $fields.Add($f)
+		$f = New-Object System.Management.Automation.Host.FieldDescription "API Key for $Url"
+		$f.SetParameterType( [System.Security.SecureString] )
+		$f.HelpMessage  = "Please enter API Key for $Url"
+		$f.Label = "&API Key for $Url"
 
-        $results = $Host.UI.Prompt( "Add API Key", "", $fields )
+		$fields.Add($f)
 
-        $pass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($results["API Key for $Url"]))
+		$results = $Host.UI.Prompt( "Add API Key", "", $fields )
 
-        # Add API Key to config file
-        Write-Log (.\NuGet.exe setApiKey $pass -Source $Url)
+		$pass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($results["API Key for $Url"]))
 
-        if ($LASTEXITCODE -le 0) {
-            $ExitCode = 0
-        }
-    }
-    else {
-        Write-Log "Skipping..."
-    }
+		# Add API Key to config file
+		Write-Log (.\NuGet.exe setApiKey $pass -Source $Url)
+
+		if ($LASTEXITCODE -le 0) {
+			$ExitCode = 0
+		}
+	}
+	else {
+		Write-Log "Skipping..."
+		$ExitCode = 2
+	}
 
 $host.SetShouldExit($ExitCode)
 Exit $ExitCode

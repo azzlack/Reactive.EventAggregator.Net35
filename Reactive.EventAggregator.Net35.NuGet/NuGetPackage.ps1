@@ -1,9 +1,9 @@
 Param (
-    [switch]$Publish
+	[switch]$Publish
 )
 
 $ErrorActionPreference = "Stop"
-$ExitCode = 1
+$global:ExitCode = 1
 
 function Write-Log {
 
@@ -48,63 +48,63 @@ function Write-Log {
 	Begin {}
 
 	Process {
-        
-        $ErrorActionPreference = "Continue"
+		
+		$ErrorActionPreference = "Continue"
 
-        if ($Messages.Length -gt 0) {
-		    try {			
-                foreach($m in $Messages) {			
-                    if ($NoConsoleOut -eq $false) {
-				        switch ($Level) {
-					        'Error' { 
-                                Write-Error $m -ErrorAction SilentlyContinue
-                                Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor Red
-                            }
-					        'Warn' { 
-                                Write-Warning $m 
-                            }
-					        'Info' { 
-                                Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor $ForegroundColor
-                            }
-				        }
-			        }
+		if ($Messages.Length -gt 0) {
+			try {			
+				foreach($m in $Messages) {			
+					if ($NoConsoleOut -eq $false) {
+						switch ($Level) {
+							'Error' { 
+								Write-Error $m -ErrorAction SilentlyContinue
+								Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor Red
+							}
+							'Warn' { 
+								Write-Warning $m 
+							}
+							'Info' { 
+								Write-Host ('{0}{1}' -f (" " * $Indent), $m) -ForegroundColor $ForegroundColor
+							}
+						}
+					}
 
-                    if ($m.Trim().Length -gt 0) {
-			            $msg = '{0}{1} [{2}] : {3}' -f (" " * $Indent), (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level.ToUpper(), $m
-    
-			            if ($Clobber) {
-				            $msg | Out-File -FilePath $Path -Force
-			            } else {
-				            $msg | Out-File -FilePath $Path -Append
-			            }
-                    }
+					if ($m.Trim().Length -gt 0) {
+						$msg = '{0}{1} [{2}] : {3}' -f (" " * $Indent), (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level.ToUpper(), $m
+	
+						if ($Clobber) {
+							$msg | Out-File -FilePath $Path -Force
+						} else {
+							$msg | Out-File -FilePath $Path -Append
+						}
+					}
 			
-			        if ($EventLogName) {
+					if ($EventLogName) {
 			
-				        if (-not $EventSource) {
-					        $EventSource = ([IO.FileInfo] $MyInvocation.ScriptName).Name
-				        }
+						if (-not $EventSource) {
+							$EventSource = ([IO.FileInfo] $MyInvocation.ScriptName).Name
+						}
 			
-				        if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) { 
-					        [Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName) 
-		                } 
+						if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) { 
+							[Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName) 
+						} 
 
-				        $log = New-Object System.Diagnostics.EventLog  
-			            $log.set_log($EventLogName)  
-			            $log.set_source($EventSource) 
+						$log = New-Object System.Diagnostics.EventLog  
+						$log.set_log($EventLogName)  
+						$log.set_source($EventSource) 
 				
-				        switch ($Level) {
-					        "Error" { $log.WriteEntry($Message, 'Error', $EventID) }
-					        "Warn"  { $log.WriteEntry($Message, 'Warning', $EventID) }
-					        "Info"  { $log.WriteEntry($Message, 'Information', $EventID) }
-				        }
-			        }
-                }
-		    } 
-            catch {
-			    throw "Failed to create log entry in: '$Path'. The error was: '$_'."
-		    }
-        }
+						switch ($Level) {
+							"Error" { $log.WriteEntry($Message, 'Error', $EventID) }
+							"Warn"  { $log.WriteEntry($Message, 'Warning', $EventID) }
+							"Info"  { $log.WriteEntry($Message, 'Information', $EventID) }
+						}
+					}
+				}
+			} 
+			catch {
+				throw "Failed to create log entry in: '$Path'. The error was: '$_'."
+			}
+		}
 	}
 
 	End {}
@@ -165,99 +165,107 @@ function Write-Log {
 }
 
 function Create-Process() {
-    param([string] $fileName, [string] $arguments)
+	param([string] $fileName, [string] $arguments)
 
-    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $pinfo.RedirectStandardError = $true
-    $pinfo.RedirectStandardOutput = $true
-    $pinfo.UseShellExecute = $false
-    $pinfo.FileName = $fileName
-    $pinfo.Arguments = $arguments
+	$pinfo = New-Object System.Diagnostics.ProcessStartInfo
+	$pinfo.RedirectStandardError = $true
+	$pinfo.RedirectStandardOutput = $true
+	$pinfo.UseShellExecute = $false
+	$pinfo.FileName = $fileName
+	$pinfo.Arguments = $arguments
 
-    $p = New-Object System.Diagnostics.Process
-    $p.StartInfo = $pinfo
+	$p = New-Object System.Diagnostics.Process
+	$p.StartInfo = $pinfo
 
-    return $p
+	return $p
 }
 
 function HandlePublishError {
-    
-    # Run NuGet Setup
-    $setupTask = Start-Process PowerShell.exe "-ExecutionPolicy Unrestricted -File .\NuGetSetup.ps1 -Url $url" -Wait -PassThru
+	param([string] $ErrorMessage)
 
-    if ($setupTask.ExitCode -eq 0) {
-        # Try to push package again
-        $publishTask = Create-Process .\NuGet.exe ("push " + $_.Name + " -Source " + $url)
-        $publishTask.Start() | Out-Null
-        $publishTask.WaitForExit()
-            
-        $output = ($publishTask.StandardOutput.ReadToEnd() -Split '[\r\n]') |? {$_}
-        $error = (($publishTask.StandardError.ReadToEnd() -Split '[\r\n]') |? {$_}) 
-        Write-Log $output
-        Write-Log $error Error
+	# Run NuGet Setup
+	$encodedMessage = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($ErrorMessage))
+	$setupTask = Start-Process PowerShell.exe "-ExecutionPolicy Unrestricted -File .\NuGetSetup.ps1 -Url $url -Base64EncodedMessage $encodedMessage" -Wait -PassThru
 
-        if ($publishTask.ExitCode -eq 0) {
-            $ExitCode = 0
-        }
-    }
-    else {
-        $ExitCode = 0
-    }
+	#Write-Log ("NuGet Setup Task Exit Code: " + $setupTask.ExitCode)
+
+	if ($setupTask.ExitCode -eq 0) {
+		# Try to push package again
+		$publishTask = Create-Process .\NuGet.exe ("push " + $_.Name + " -Source " + $url)
+		$publishTask.Start() | Out-Null
+		$publishTask.WaitForExit()
+			
+		$output = ($publishTask.StandardOutput.ReadToEnd() -Split '[\r\n]') |? {$_}
+		$error = (($publishTask.StandardError.ReadToEnd() -Split '[\r\n]') |? {$_}) 
+		Write-Log $output
+		Write-Log $error Error
+
+		if ($publishTask.ExitCode -eq 0) {
+			$global:ExitCode = 0
+		}
+	}
+	elseif ($setupTask.ExitCode -eq 2) {
+		$global:ExitCode = 2
+	}
+	else {
+		$global:ExitCode = 0
+	}
 }
 
 function Publish {
 
-    Write-Log " "
+	Write-Log " "
 	Write-Log "Publishing package..." -ForegroundColor Green
 
-    # Get nuget config
-    [xml]$nugetConfig = Get-Content .\NuGet.Config
-    
-    $nugetConfig.configuration.packageSources.add | ForEach-Object {
-        $url = $_.value
+	# Get nuget config
+	[xml]$nugetConfig = Get-Content .\NuGet.Config
+	
+	$nugetConfig.configuration.packageSources.add | ForEach-Object {
+		$url = $_.value
 
-        Write-Log "Repository Url: $url"
-        Write-Log " "
+		Write-Log "Repository Url: $url"
+		Write-Log " "
 
-        Get-ChildItem *.nupkg | Where-Object { $_.Name.EndsWith(".symbols.nupkg") -eq $false } | ForEach-Object { 
+		Get-ChildItem *.nupkg | Where-Object { $_.Name.EndsWith(".symbols.nupkg") -eq $false } | ForEach-Object { 
 
-            # Try to push package
-            $task = Create-Process .\NuGet.exe ("push " + $_.Name + " -Source " + $url)
-            $task.Start() | Out-Null
-            $task.WaitForExit()
-            
-            $output = ($task.StandardOutput.ReadToEnd() -Split '[\r\n]') |? {$_}
-            $error = (($task.StandardError.ReadToEnd() -Split '[\r\n]') |? {$_}) 
-            Write-Log $output
-            Write-Log $error Error
-           
-            if ($task.ExitCode -gt 0) {
-                HandlePublishError
-            }
-            else {
-                $ExitCode = 0
-            }                
-        }
-    }
+			# Try to push package
+			$task = Create-Process .\NuGet.exe ("push " + $_.Name + " -Source " + $url)
+			$task.Start() | Out-Null
+			$task.WaitForExit()
+			
+			$output = ($task.StandardOutput.ReadToEnd() -Split '[\r\n]') |? { $_ }
+			$error = ($task.StandardError.ReadToEnd() -Split '[\r\n]') |? { $_ }
+			Write-Log $output
+			Write-Log $error Error
+		   
+			if ($task.ExitCode -gt 0) {
+				HandlePublishError -ErrorMessage $error
+				#Write-Log ("HandlePublishError() Exit Code: " + $global:ExitCode)
+			}
+			else {
+				$global:ExitCode = 0
+			}                
+		}
+	}
 }
 
 Write-Log " "
-Write-Log "NuGet Packager 2.0.2" -ForegroundColor Yellow
+Write-Log "NuGet Packager 2.0.3" -ForegroundColor Yellow
 
 # Make sure the nuget executable is writable
 Set-ItemProperty NuGet.exe -Name IsReadOnly -Value $false
 
 # Make sure the nupkg files are writeable and create backup
 if (Test-Path *.nupkg) {
-    Set-ItemProperty *.nupkg -Name IsReadOnly -Value $false
+	Set-ItemProperty *.nupkg -Name IsReadOnly -Value $false
 
 	Write-Log " "
 	Write-Log "Creating backup..." -ForegroundColor Green
 
-    Get-ChildItem *.nupkg | ForEach-Object { 
-        Move-Item $_.Name ($_.Name + ".bak") -Force
-        Write-Log ("Renamed " + $_.Name + " to " + $_.Name + ".bak")
-    }
+	Get-ChildItem *.nupkg | ForEach-Object { 
+		Move-Item $_.Name ($_.Name + ".bak") -Force
+		Write-Log ("Renamed " + $_.Name + " to " + $_.Name + ".bak")
+	}
 }
 
 Write-Log " "
@@ -269,21 +277,37 @@ Write-Log "Creating package..." -ForegroundColor Green
 
 # Create symbols package if any .pdb files are located in the lib folder
 If ((Get-ChildItem *.pdb -Path .\lib -Recurse).Count -gt 0) {
-    Write-Log (Invoke-Command {.\NuGet.exe pack Package.nuspec -Symbol -Verbosity Detailed 2>&1})
-    $ExitCode = $LASTEXITCODE
+	$packageTask = Create-Process .\NuGet.exe ("pack Package.nuspec -Symbol -Verbosity Detailed")
+	$packageTask.Start() | Out-Null
+	$packageTask.WaitForExit()
+			
+	$output = ($packageTask.StandardOutput.ReadToEnd() -Split '[\r\n]') |? {$_}
+	$error = (($packageTask.StandardError.ReadToEnd() -Split '[\r\n]') |? {$_}) 
+	Write-Log $output
+	Write-Log $error Error
+
+	$global:ExitCode = $packageTask.ExitCode
 }
 Else {
-    Write-Log (Invoke-Command {.\NuGet.exe pack Package.nuspec -Verbosity Detailed 2>&1})
-    $ExitCode = $LASTEXITCODE
+	packageTask = Create-Process .\NuGet.exe ("pack Package.nuspec -Verbosity Detailed")
+	$packageTask.Start() | Out-Null
+	$packageTask.WaitForExit()
+			
+	$output = ($packageTask.StandardOutput.ReadToEnd() -Split '[\r\n]') |? {$_}
+	$error = (($packageTask.StandardError.ReadToEnd() -Split '[\r\n]') |? {$_}) 
+	Write-Log $output
+	Write-Log $error Error
+
+	$global:ExitCode = $packageTask.ExitCode
 }
 
 # Check if package should be published
-if ($Publish) {
-    Publish
+if ($Publish -and $global:ExitCode -eq 0) {
+	Publish
 }
 
 Write-Log " "
-Write-Log "Exit Code: $ExitCode" -ForegroundColor Gray
+Write-Log "Exit Code: $global:ExitCode" -ForegroundColor Gray
 
-$host.SetShouldExit($ExitCode)
-Exit $ExitCode
+$host.SetShouldExit($global:ExitCode)
+Exit $global:ExitCode

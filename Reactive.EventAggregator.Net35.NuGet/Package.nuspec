@@ -8,6 +8,7 @@
     <owners>Ove Andersen</owners>
     <description>
       Event Aggregator using Reactive Extensions 1.0, compatible with .NET 3.5 applications.
+      Inspired by https://www.nuget.org/packages/Reactive.EventAggregator
     </description>
     <releaseNotes>
     </releaseNotes>
